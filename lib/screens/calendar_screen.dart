@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/festivals_data.dart';
 import '../theme/contra_theme.dart';
+import '../widgets/long_tap.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -287,9 +288,8 @@ class _DayCell extends StatelessWidget {
     return Material(
       color: isSelected ? ContraTheme.teal : ContraTheme.card,
       shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
+      child: LongTap(
+        onActivate: onTap,
         child: Container(
           decoration: isToday && !isSelected
               ? BoxDecoration(
@@ -342,9 +342,8 @@ class _NavIconButton extends StatelessWidget {
       color: ContraTheme.card,
       shape: const CircleBorder(),
       elevation: 1,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
+      child: LongTap(
+        onActivate: onTap,
         child: SizedBox(
           width: 42,
           height: 42,

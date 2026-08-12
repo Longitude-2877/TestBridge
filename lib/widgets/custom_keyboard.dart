@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/contra_theme.dart';
+import 'long_tap.dart';
 
 class CustomTextField extends StatefulWidget {
   final TextEditingController controller;
@@ -37,8 +38,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _openKeyboard(context),
+    return LongTap(
+      onActivate: () => _openKeyboard(context),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
@@ -176,7 +177,7 @@ class _KeyboardSheetState extends State<_KeyboardSheet> {
   }
 
   Widget _buildAlpha() {
-    const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+    const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+'];
     const row1 = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'];
     const row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'];
     const row3 = ['Z', 'X', 'C', 'V', 'B', 'N', 'M'];
@@ -236,9 +237,8 @@ class _Key extends StatelessWidget {
       child: Material(
         color: color ?? ContraTheme.bg,
         borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
+        child: LongTap(
+          onActivate: onTap,
           child: Center(
             child: Text(
               label,

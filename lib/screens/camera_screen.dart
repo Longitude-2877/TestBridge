@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../theme/contra_theme.dart';
+import '../widgets/long_tap.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -191,9 +192,8 @@ class _ModeButton extends StatelessWidget {
     return Material(
       color: active ? Colors.white : Colors.white24,
       borderRadius: BorderRadius.circular(26),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(26),
+      child: LongTap(
+        onActivate: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: Row(
@@ -272,9 +272,8 @@ class _CaptureButton extends StatelessWidget {
       shape: const CircleBorder(),
       color: Colors.white,
       elevation: 4,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
+      child: LongTap(
+        onActivate: onTap,
         child: Container(
           width: 68,
           height: 68,

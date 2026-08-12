@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/phone_services.dart';
 import '../theme/contra_theme.dart';
+import '../widgets/long_tap.dart';
 import 'contacts_screen.dart';
 
 class DialerScreen extends StatefulWidget {
@@ -142,23 +143,22 @@ class _DialerScreenState extends State<DialerScreen> {
                       _KeyButton(
                         main: k[0],
                         sub: k[1],
-                        onTap: () => _addDigit(k[0]),
-                        onLongPress: k[0] == '0' ? () => _addDigit('+') : null,
+                        onActivate: () => _addDigit(k[0]),
                       ),
                     _ActionButton(
                       icon: Icons.contacts_rounded,
                       color: ContraTheme.yellow,
-                      onTap: _openContacts,
+                      onActivate: _openContacts,
                     ),
                     _ActionButton(
                       icon: Icons.call_rounded,
                       color: ContraTheme.green,
-                      onTap: _call,
+                      onActivate: _call,
                     ),
                     _ActionButton(
                       icon: Icons.backspace_rounded,
                       color: ContraTheme.red,
-                      onTap: _removeDigit,
+                      onActivate: _removeDigit,
                     ),
                   ],
                 ),
@@ -174,14 +174,12 @@ class _DialerScreenState extends State<DialerScreen> {
 class _KeyButton extends StatelessWidget {
   final String main;
   final String sub;
-  final VoidCallback onTap;
-  final VoidCallback? onLongPress;
+  final VoidCallback onActivate;
 
   const _KeyButton({
     required this.main,
     required this.sub,
-    required this.onTap,
-    this.onLongPress,
+    required this.onActivate,
   });
 
   @override
@@ -190,10 +188,8 @@ class _KeyButton extends StatelessWidget {
       color: ContraTheme.card,
       borderRadius: BorderRadius.circular(16),
       elevation: 1,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(16),
+      child: LongTap(
+        onActivate: onActivate,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -227,9 +223,13 @@ class _KeyButton extends StatelessWidget {
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback onActivate;
 
-  const _ActionButton({required this.icon, required this.color, required this.onTap});
+  const _ActionButton({
+    required this.icon,
+    required this.color,
+    required this.onActivate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -237,9 +237,8 @@ class _ActionButton extends StatelessWidget {
       color: color,
       borderRadius: BorderRadius.circular(22),
       elevation: 2,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
+      child: LongTap(
+        onActivate: onActivate,
         child: Icon(icon, size: 36, color: Colors.white),
       ),
     );

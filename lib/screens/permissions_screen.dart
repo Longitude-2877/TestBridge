@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/phone_services.dart';
 import '../theme/contra_theme.dart';
+import '../widgets/long_tap.dart';
 
 class PermissionsScreen extends StatefulWidget {
   final VoidCallback onContinue;
@@ -77,9 +78,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       color: ContraTheme.card,
       borderRadius: BorderRadius.circular(18),
       elevation: 1,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+      child: LongTap(
+        onActivate: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
@@ -190,9 +190,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                   color: ContraTheme.card,
                   borderRadius: BorderRadius.circular(18),
                   elevation: 1,
-                  child: InkWell(
-                    onTap: () => PhoneServices.requestDefaultLauncher(),
-                    borderRadius: BorderRadius.circular(18),
+                  child: LongTap(
+                    onActivate: () => PhoneServices.requestDefaultLauncher(),
                     child: const Padding(
                       padding:
                           EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -228,9 +227,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
             child: Material(
               color: ContraTheme.teal,
               borderRadius: BorderRadius.circular(20),
-              child: InkWell(
-                onTap: widget.onContinue,
-                borderRadius: BorderRadius.circular(20),
+              child: LongTap(
+                onActivate: widget.onContinue,
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: Center(

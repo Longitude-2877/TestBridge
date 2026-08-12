@@ -9,6 +9,7 @@ import '../services/home_items_store.dart';
 import '../services/phone_services.dart';
 import '../theme/contra_theme.dart';
 import '../widgets/custom_keyboard.dart';
+import '../widgets/long_tap.dart';
 
 class HomeApp {
   final IconData icon;
@@ -214,8 +215,8 @@ class _LauncherScreenState extends State<LauncherScreen> {
                                 color: ContraTheme.card,
                                 borderRadius: BorderRadius.circular(16),
                                 elevation: 1,
-                                child: InkWell(
-                                  onTap: () async {
+                                child: LongTap(
+                                  onActivate: () async {
                                     final icon = await PhoneServices.getAppIcon(
                                         app.package);
                                     if (!mounted) return;
@@ -233,7 +234,6 @@ class _LauncherScreenState extends State<LauncherScreen> {
                                       _toast('${app.name} added');
                                     }
                                   },
-                                  borderRadius: BorderRadius.circular(16),
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 14, vertical: 10),
@@ -329,8 +329,8 @@ class _LauncherScreenState extends State<LauncherScreen> {
                     builder: (context, snap) {
                       final data = snap.data;
                       if (data == null) return const SizedBox.shrink();
-                      return GestureDetector(
-                        onTap: () =>
+                      return LongTap(
+                        onActivate: () =>
                             Navigator.of(sheetContext).pop(assets[i]),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
@@ -400,14 +400,13 @@ class _LauncherScreenState extends State<LauncherScreen> {
                 color: ContraTheme.card,
                 borderRadius: BorderRadius.circular(16),
                 elevation: 1,
-                child: InkWell(
-                  onTap: () async {
+                child: LongTap(
+                  onActivate: () async {
                     final path = await _pickPhoto();
                     if (path != null && mounted) {
                       setSheetState(() => photoPath = path);
                     }
                   },
-                  borderRadius: BorderRadius.circular(16),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(
@@ -469,8 +468,8 @@ class _LauncherScreenState extends State<LauncherScreen> {
                 child: Material(
                   color: ContraTheme.green,
                   borderRadius: BorderRadius.circular(20),
-                  child: InkWell(
-                    onTap: () async {
+                  child: LongTap(
+                    onActivate: () async {
                       final name = nameController.text.trim();
                       final number = numberController.text.trim();
                       if (name.isEmpty || number.isEmpty) {
@@ -489,7 +488,6 @@ class _LauncherScreenState extends State<LauncherScreen> {
                         _toast('$name added');
                       }
                     },
-                    borderRadius: BorderRadius.circular(20),
                     child: const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Center(
@@ -556,9 +554,8 @@ class _LauncherScreenState extends State<LauncherScreen> {
                 shape: const CircleBorder(),
                 elevation: 2,
                 shadowColor: const Color(0x22000000),
-                child: InkWell(
-                  onTap: _openAddSheet,
-                  customBorder: const CircleBorder(),
+                child: LongTap(
+                  onActivate: _openAddSheet,
                   child: const SizedBox(
                     width: 58,
                     height: 58,
@@ -653,9 +650,8 @@ class _AddOptionRow extends StatelessWidget {
       color: ContraTheme.card,
       borderRadius: BorderRadius.circular(18),
       elevation: 1,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+      child: LongTap(
+        onActivate: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
@@ -752,9 +748,8 @@ class _AppRow extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       elevation: 2,
       shadowColor: const Color(0x22000000),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+      child: LongTap(
+        onActivate: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           // Icon takes 1/3 of the card, name takes 2/3

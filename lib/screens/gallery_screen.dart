@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:video_player/video_player.dart';
 import '../theme/contra_theme.dart';
+import '../widgets/long_tap.dart';
 
 class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key});
@@ -183,8 +184,8 @@ class _GalleryTileState extends State<_GalleryTile> {
       borderRadius: BorderRadius.circular(18),
       clipBehavior: Clip.antiAlias,
       elevation: 1,
-      child: InkWell(
-        onTap: widget.onTap,
+      child: LongTap(
+        onActivate: widget.onTap,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -240,18 +241,24 @@ class _PhotoViewerState extends State<_PhotoViewer> {
           style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel',
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 16)),
+          LongTap(
+            onActivate: () => Navigator.of(context).pop(false),
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Text('Cancel',
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 16)),
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete',
-                style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 16,
-                    color: ContraTheme.red)),
+          LongTap(
+            onActivate: () => Navigator.of(context).pop(true),
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Text('Delete',
+                  style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 16,
+                      color: ContraTheme.red)),
+            ),
           ),
         ],
       ),
@@ -343,18 +350,24 @@ class _VideoViewerState extends State<_VideoViewer> {
           style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel',
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 16)),
+          LongTap(
+            onActivate: () => Navigator.of(context).pop(false),
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Text('Cancel',
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 16)),
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete',
-                style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 16,
-                    color: ContraTheme.red)),
+          LongTap(
+            onActivate: () => Navigator.of(context).pop(true),
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Text('Delete',
+                  style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 16,
+                      color: ContraTheme.red)),
+            ),
           ),
         ],
       ),
@@ -430,9 +443,8 @@ class _CloseButton extends StatelessWidget {
     return Material(
       color: Colors.black54,
       shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
+      child: LongTap(
+        onActivate: onTap,
         child: const SizedBox(
           width: 42,
           height: 42,
@@ -452,9 +464,8 @@ class _DeleteButton extends StatelessWidget {
     return Material(
       color: Colors.black54,
       shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
+      child: LongTap(
+        onActivate: onTap,
         child: const SizedBox(
           width: 42,
           height: 42,

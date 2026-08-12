@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/phone_services.dart';
 import '../theme/contra_theme.dart';
+import 'long_tap.dart';
 
 class SystemTopBar extends StatefulWidget {
   const SystemTopBar({super.key});
@@ -260,9 +261,8 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(32),
+    return LongTap(
+      onActivate: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
         child: Row(

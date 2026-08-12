@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/contra_theme.dart';
+import '../widgets/long_tap.dart';
 
 class CalculatorScreen extends StatefulWidget {
   const CalculatorScreen({super.key});
@@ -291,9 +292,8 @@ class _Key extends StatelessWidget {
       color: bg,
       borderRadius: BorderRadius.circular(16),
       elevation: 2,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+      child: LongTap(
+        onActivate: onTap,
         child: Center(
           child: Text(
             label,

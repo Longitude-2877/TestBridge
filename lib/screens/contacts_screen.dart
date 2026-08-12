@@ -3,6 +3,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../services/phone_services.dart';
 import '../theme/contra_theme.dart';
 import '../widgets/custom_keyboard.dart';
+import '../widgets/long_tap.dart';
 
 class ContactsScreen extends StatefulWidget {
   final void Function(Contact contact)? onSelected;
@@ -88,15 +89,16 @@ class _ContactsScreenState extends State<ContactsScreen> {
               child: Material(
                 color: ContraTheme.green,
                 borderRadius: BorderRadius.circular(20),
-                child: InkWell(
-                  onTap: () async {
+                child: LongTap(
+                  onActivate: () async {
                     final name = nameController.text.trim();
                     final number = numberController.text.trim();
                     if (name.isEmpty || number.isEmpty) {
                       _toast('Enter a name and a number');
                       return;
                     }
-                    final error = await PhoneServices.addContact(name, number);
+                    final error =
+                        await PhoneServices.addContact(name, number);
                     if (error == null) {
                       Navigator.of(context).pop(true);
                       _toast('Contact saved');
@@ -105,7 +107,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
                       _toast(error);
                     }
                   },
-                  borderRadius: BorderRadius.circular(20),
                   child: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 18),
                     child: Center(
@@ -160,9 +161,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 shape: const CircleBorder(),
                 elevation: 2,
                 shadowColor: const Color(0x22000000),
-                child: InkWell(
-                  onTap: _addContact,
-                  customBorder: const CircleBorder(),
+                child: LongTap(
+                  onActivate: _addContact,
                   child: const SizedBox(
                     width: 64,
                     height: 64,
@@ -212,8 +212,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
                                 color: ContraTheme.card,
                                 borderRadius: BorderRadius.circular(20),
                                 elevation: 1,
-                                child: InkWell(
-                                  onTap: () {
+                                child: LongTap(
+                                  onActivate: () {
                                     final selected = widget.onSelected;
                                     if (selected != null) {
                                       selected(c);
@@ -221,7 +221,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
                                       _callContact(c);
                                     }
                                   },
-                                  borderRadius: BorderRadius.circular(20),
                                   child: Padding(
                                     padding: const EdgeInsets.all(14),
                                     child: Row(
