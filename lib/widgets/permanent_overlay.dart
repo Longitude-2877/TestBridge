@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:torch_light/torch_light.dart';
 import '../services/phone_services.dart';
 import '../theme/contra_theme.dart';
 import 'long_tap.dart';
@@ -63,8 +64,11 @@ class _SystemTopBarState extends State<SystemTopBar> {
 
   @override
   Widget build(BuildContext context) {
-    final h = _now.hour.toString().padLeft(2, '0');
+    var hour = _now.hour % 12;
+    if (hour == 0) hour = 12;
+    final h = hour.toString();
     final m = _now.minute.toString().padLeft(2, '0');
+    final ampm = _now.hour >= 12 ? 'PM' : 'AM';
 
     return Container(
       width: double.infinity,
@@ -88,7 +92,7 @@ class _SystemTopBarState extends State<SystemTopBar> {
               const Icon(Icons.schedule, size: 28, color: ContraTheme.ink),
               const SizedBox(width: 6),
               Text(
-                '$h:$m',
+                '$h:$m $ampm',
                 style: const TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 26,
@@ -101,6 +105,8 @@ class _SystemTopBarState extends State<SystemTopBar> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _LightButton(),
+              const SizedBox(width: 14),
               _BatteryIndicator(level: _batteryLevel),
               const SizedBox(width: 4),
               if (_charging)
@@ -152,12 +158,12 @@ class _BatteryIndicator extends StatelessWidget {
           children: [
             for (var i = 0; i < 3; i++)
               Container(
-                width: 14,
-                height: 24,
-                margin: const EdgeInsets.symmetric(horizontal: 2),
+                width: 19,
+                height: 32,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
                 decoration: BoxDecoration(
                   color: i < litSegments ? segmentColor : ContraTheme.bg,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(5),
                   boxShadow: i < litSegments
                       ? [
                           BoxShadow(
@@ -170,16 +176,75 @@ class _BatteryIndicator extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(width: 3),
+        const SizedBox(width: 4),
         Container(
-          width: 6,
-          height: 11,
+          width: 9,
+          height: 15,
           decoration: BoxDecoration(
             color: ContraTheme.muted,
             borderRadius: const BorderRadius.horizontal(right: Radius.circular(3)),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LightButton extends StatefulWidget {
+  @override
+  State<_LightButton> createState() => _LightButtonState();
+}
+
+class _LightButtonState extends State<_LightButton> {
+  bool _on = false;
+
+  Future<void> _toggle() async {
+    try {
+      if (_on) {
+        await TorchLight.disableTorch();
+        if (mounted) setState(() => _on = false);
+      } else {
+        await TorchLight.enableTorch();
+        if (mounted) setState(() => _on = true);
+      }
+    } catch (e) {
+      debugPrint('torch failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(
+            content: Text('Flashlight not available',
+                style: TextStyle(fontFamily: 'Poppins')),
+            duration: Duration(seconds: 2),
+          ));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LongTap(
+      onActivate: _toggle,
+      child: Container(
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: _on ? ContraTheme.yellow : Colors.transparent,
+          shape: BoxShape.circle,
+          boxShadow: _on
+              ? [
+                  BoxShadow(
+                    color: ContraTheme.yellow.withValues(alpha: 0.7),
+                    blurRadius: 8,
+                  ),
+                ]
+              : null,
+        ),
+        child: Icon(
+          _on ? Icons.lightbulb_rounded : Icons.lightbulb_outline_rounded,
+          size: 26,
+          color: _on ? Colors.white : ContraTheme.muted,
+        ),
+      ),
     );
   }
 }
