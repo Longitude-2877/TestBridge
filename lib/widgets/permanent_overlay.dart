@@ -86,46 +86,56 @@ class _SystemTopBarState extends State<SystemTopBar> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.schedule, size: 28, color: ContraTheme.ink),
-              const SizedBox(width: 6),
-              Text(
-                '$h:$m $ampm',
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: ContraTheme.ink,
-                ),
-              ),
-            ],
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _LightButton(),
-              const SizedBox(width: 14),
-              _BatteryIndicator(level: _batteryLevel),
-              const SizedBox(width: 4),
-              if (_charging)
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: ContraTheme.green,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: ContraTheme.green.withValues(alpha: 0.7),
-                        blurRadius: 6,
-                      ),
-                    ],
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.schedule, size: 28, color: ContraTheme.ink),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$h:$m $ampm',
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: ContraTheme.ink,
+                    ),
                   ),
-                  child: const Icon(Icons.bolt_rounded,
-                      size: 20, color: Colors.white),
-                ),
-            ],
+                ],
+              ),
+            ),
+          ),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _LightButton(),
+                  const SizedBox(width: 14),
+                  _BatteryIndicator(level: _batteryLevel),
+                  const SizedBox(width: 4),
+                  if (_charging)
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: ContraTheme.green,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: ContraTheme.green.withValues(alpha: 0.7),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.bolt_rounded,
+                          size: 20, color: Colors.white),
+                    ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -298,32 +308,35 @@ class _SystemBottomBarState extends State<SystemBottomBar> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _NavButton(
-            icon: Icons.sos_rounded,
-            label: 'SOS',
-            color: Colors.red.shade600,
-            onTap: () {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(const SnackBar(
-                  content: Text('Coming soon!',
-                      style: TextStyle(fontFamily: 'Poppins')),
-                  duration: Duration(seconds: 2),
-                ));
-            },
-          ),
-          _NavButton(
-            icon: Icons.home_rounded,
-            label: 'Home',
-            color: ContraTheme.ink,
-            onTap: _onHomeTap,
-          ),
-          _NavButton(
-            icon: Icons.arrow_back_rounded,
-            label: 'Back',
-            color: ContraTheme.ink,
-            onTap: widget.onBack,
-          ),
+          for (final btn in [
+            _NavButton(
+              icon: Icons.sos_rounded,
+              label: 'SOS',
+              color: Colors.red.shade600,
+              onTap: () {
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(const SnackBar(
+                    content: Text('Coming soon!',
+                        style: TextStyle(fontFamily: 'Poppins')),
+                    duration: Duration(seconds: 2),
+                  ));
+              },
+            ),
+            _NavButton(
+              icon: Icons.home_rounded,
+              label: 'Home',
+              color: ContraTheme.ink,
+              onTap: _onHomeTap,
+            ),
+            _NavButton(
+              icon: Icons.arrow_back_rounded,
+              label: 'Back',
+              color: ContraTheme.ink,
+              onTap: widget.onBack,
+            ),
+          ])
+            Expanded(child: Center(child: FittedBox(child: btn))),
         ],
       ),
     );

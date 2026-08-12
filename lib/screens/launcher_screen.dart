@@ -569,10 +569,23 @@ class _LauncherScreenState extends State<LauncherScreen> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : ListView.separated(
-                    itemCount: defaults.length + _apps.length + _quick.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) {
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final count =
+                          defaults.length + _apps.length + _quick.length;
+                      // Fit all rows on screen, shrinking when the screen is
+                      // small; never smaller than 52px so rows stay usable.
+                      final spacing = 8.0;
+                      final fitted =
+                          (constraints.maxHeight - spacing * (count - 1)) /
+                              count;
+                      final rowH = fitted.clamp(52.0, 84.0).toDouble();
+                      return ListView.separated(
+                        itemExtent: rowH,
+                        itemCount: count,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 8),
+                        itemBuilder: (context, i) {
                       if (i < defaults.length) {
                         final app = defaults[i];
                         return _AppRow(
@@ -620,6 +633,8 @@ class _LauncherScreenState extends State<LauncherScreen> {
                         subtitle: 'Call ${quick.name} with one tap',
                         onTap: () => _callQuick(quick),
                       );
+                    },
+                  );
                     },
                   ),
           ),
@@ -750,53 +765,64 @@ class _AppRow extends StatelessWidget {
       shadowColor: const Color(0x22000000),
       child: LongTap(
         onActivate: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          // Icon takes 1/3 of the card, name takes 2/3
-          child: Row(
-            children: [
-              Expanded(
-                flex: 1,
-                child: Container(
-                  height: 60,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(16),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final tileH = (c.maxHeight - 16).clamp(40.0, 60.0).toDouble();
+            final compact = c.maxHeight < 64;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              // Icon takes 1/3 of the card, name takes 2/3
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: SizedBox(
+                      height: tileH,
+                      child: Container(
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Center(child: leading),
+                      ),
+                    ),
                   ),
-                  child: Center(child: leading),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: ContraTheme.ink,
-                      ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: compact ? 17 : 20,
+                            fontWeight: FontWeight.w700,
+                            color: ContraTheme.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: ContraTheme.muted,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: ContraTheme.muted,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
