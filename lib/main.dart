@@ -22,15 +22,15 @@ import 'services/notifier_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-    ));
-    await WakelockPlus.enable();
-  } catch (_) {}
+  // Nothing may block runApp: if any platform call hangs, the app shows a
+  // gray screen forever. All setup is fire-and-forget with error swallowing.
+  unawaited(SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]));
+  unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky));
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.transparent,
+  ));
+  unawaited(WakelockPlus.enable());
   unawaited(Notifier.init());
   runApp(const ElderLauncherApp());
 }
