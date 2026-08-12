@@ -8,16 +8,18 @@ class Notifier {
       FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
-    tzdata.initializeTimeZones();
-    const settings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-      iOS: DarwinInitializationSettings(),
-    );
-    await _plugin.initialize(settings);
-    final android =
-        _plugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    await android?.requestNotificationsPermission();
+    try {
+      tzdata.initializeTimeZones();
+      const settings = InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: DarwinInitializationSettings(),
+      );
+      await _plugin.initialize(settings);
+      final android =
+          _plugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      await android?.requestNotificationsPermission();
+    } catch (_) {}
   }
 
   /// Cancel all scheduled notifications for a reminder [id].
