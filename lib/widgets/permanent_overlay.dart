@@ -107,11 +107,11 @@ class _SystemTopBarState extends State<SystemTopBar> {
                 Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: ContraTheme.yellow,
+                    color: ContraTheme.green,
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: ContraTheme.yellow.withValues(alpha: 0.7),
+                        color: ContraTheme.green.withValues(alpha: 0.7),
                         blurRadius: 6,
                       ),
                     ],

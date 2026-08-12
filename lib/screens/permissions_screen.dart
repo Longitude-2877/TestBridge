@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../services/home_items_store.dart';
 import '../services/phone_services.dart';
 import '../theme/contra_theme.dart';
 import '../widgets/long_tap.dart';
@@ -18,6 +19,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
   bool _videos = false;
   bool _contacts = false;
   bool _phone = false;
+  bool _skipNextTime = false;
 
   @override
   void initState() {
@@ -42,29 +44,42 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     }
   }
 
-  Future<void> _askCamera() async {
-    await Permission.camera.request();
-    _refresh();
+  Future<void> _askPermission(Permission p) async {
+    final status = await p.request();
+    if (status.isGranted) {
+      await _refresh();
+      return;
+    }
+    if (status.isPermanentlyDenied) {
+      if (mounted) {
+        _toast('Android blocked this. Press and hold to open Settings');
+      }
+      await openAppSettings();
+      return;
+    }
+    await _refresh();
+    if (mounted) {
+      _toast('Not allowed yet - press and hold the card to try again');
+    }
   }
 
-  Future<void> _askPhotos() async {
-    await Permission.photos.request();
-    _refresh();
-  }
+  Future<void> _askCamera() => _askPermission(Permission.camera);
 
-  Future<void> _askVideos() async {
-    await Permission.videos.request();
-    _refresh();
-  }
+  Future<void> _askPhotos() => _askPermission(Permission.photos);
 
-  Future<void> _askContacts() async {
-    await Permission.contacts.request();
-    _refresh();
-  }
+  Future<void> _askVideos() => _askPermission(Permission.videos);
 
-  Future<void> _askPhone() async {
-    await Permission.phone.request();
-    _refresh();
+  Future<void> _askContacts() => _askPermission(Permission.contacts);
+
+  Future<void> _askPhone() => _askPermission(Permission.phone);
+
+  void _toast(String msg) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(msg, style: const TextStyle(fontFamily: 'Poppins')),
+        duration: const Duration(seconds: 2),
+      ));
   }
 
   Widget _permCard({
@@ -222,13 +237,56 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
             ),
           ),
           const SizedBox(height: 12),
+          LongTap(
+            onActivate: () => setState(() => _skipNextTime = !_skipNextTime),
+            child: Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: _skipNextTime
+                        ? ContraTheme.green
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(
+                      color: _skipNextTime
+                          ? ContraTheme.green
+                          : ContraTheme.muted,
+                      width: 2,
+                    ),
+                  ),
+                  child: _skipNextTime
+                      ? const Icon(Icons.check_rounded,
+                          color: Colors.white, size: 20)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Don't show this screen again',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: ContraTheme.ink,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: Material(
               color: ContraTheme.teal,
               borderRadius: BorderRadius.circular(20),
               child: LongTap(
-                onActivate: widget.onContinue,
+                onActivate: () async {
+                  await HomeItemsStore.savePermissionsSkipped(_skipNextTime);
+                  if (mounted) widget.onContinue();
+                },
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: Center(

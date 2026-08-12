@@ -36,6 +36,17 @@ class QuickContact {
 class HomeItemsStore {
   static const _appsKey = 'home_added_apps';
   static const _quickKey = 'home_quick_contacts';
+  static const _permSkipKey = 'perm_screen_skipped';
+
+  static Future<bool> loadPermissionsSkipped() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_permSkipKey) ?? false;
+  }
+
+  static Future<void> savePermissionsSkipped(bool skipped) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_permSkipKey, skipped);
+  }
 
   static Future<List<AddedApp>> loadApps() async {
     final prefs = await SharedPreferences.getInstance();

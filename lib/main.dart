@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'services/home_items_store.dart';
 import 'screens/calculator_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/camera_screen.dart';
@@ -69,6 +70,7 @@ class _LauncherRootState extends State<LauncherRoot> with WidgetsBindingObserver
   }
 
   Future<void> _checkPermissions() async {
+    final skipped = await HomeItemsStore.loadPermissionsSkipped();
     final camera = await Permission.camera.isGranted;
     final photos = await Permission.photos.isGranted;
     final videos = await Permission.videos.isGranted;
@@ -76,7 +78,8 @@ class _LauncherRootState extends State<LauncherRoot> with WidgetsBindingObserver
     final phone = await Permission.phone.isGranted;
     if (mounted) {
       setState(() {
-        _showPermissions = !(camera && photos && videos && contacts && phone);
+        _showPermissions =
+            !skipped && !(camera && photos && videos && contacts && phone);
       });
     }
   }
