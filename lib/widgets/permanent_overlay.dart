@@ -299,13 +299,29 @@ class _SystemBottomBarState extends State<SystemBottomBar> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _NavButton(
+            icon: Icons.sos_rounded,
+            label: 'SOS',
+            color: Colors.red.shade600,
+            onTap: () {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(const SnackBar(
+                  content: Text('Coming soon!',
+                      style: TextStyle(fontFamily: 'Poppins')),
+                  duration: Duration(seconds: 2),
+                ));
+            },
+          ),
+          _NavButton(
             icon: Icons.home_rounded,
             label: 'Home',
+            color: ContraTheme.ink,
             onTap: _onHomeTap,
           ),
           _NavButton(
             icon: Icons.arrow_back_rounded,
             label: 'Back',
+            color: ContraTheme.ink,
             onTap: widget.onBack,
           ),
         ],
@@ -317,10 +333,12 @@ class _SystemBottomBarState extends State<SystemBottomBar> {
 class _NavButton extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color color;
   final VoidCallback onTap;
   const _NavButton({
     required this.icon,
     required this.label,
+    required this.color,
     required this.onTap,
   });
 
@@ -333,15 +351,15 @@ class _NavButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 28, color: ContraTheme.ink),
+            Icon(icon, size: 28, color: color),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: ContraTheme.ink,
+                color: color,
               ),
             ),
           ],
