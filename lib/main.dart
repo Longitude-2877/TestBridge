@@ -35,14 +35,28 @@ Future<void> main() async {
   runApp(const ElderLauncherApp());
 }
 
-class ElderLauncherApp extends StatefulWidget {
+class ElderLauncherApp extends StatelessWidget {
   const ElderLauncherApp({super.key});
 
   @override
-  State<ElderLauncherApp> createState() => _ElderLauncherAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Elder Launcher 5',
+      debugShowCheckedModeBanner: false,
+      theme: ContraTheme.light(),
+      home: const LauncherRoot(),
+    );
+  }
 }
 
-class _ElderLauncherAppState extends State<ElderLauncherApp>
+class LauncherRoot extends StatefulWidget {
+  const LauncherRoot({super.key});
+
+  @override
+  State<LauncherRoot> createState() => _LauncherRootState();
+}
+
+class _LauncherRootState extends State<LauncherRoot>
     with WidgetsBindingObserver {
   int _screen = 0; // 0 home, 1 dialer, 2 camera, 3 calendar, 4 calculator,
   // 5 gallery, 6 pills, 7 alarms
