@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -6,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../services/home_items_store.dart';
+import '../services/messages_store.dart';
 import '../services/phone_services.dart';
 import '../theme/contra_theme.dart';
 import '../widgets/custom_keyboard.dart';
@@ -39,12 +41,33 @@ class _LauncherScreenState extends State<LauncherScreen> {
   List<AddedApp> _apps = [];
   List<QuickContact> _quick = [];
   final Map<String, Uint8List> _appIcons = {};
+  final ScrollController _listScroll = ScrollController();
   bool _loading = true;
+  int _unread = 0;
+  Timer? _unreadTimer;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _refreshUnread();
+    _unreadTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _refreshUnread();
+    });
+  }
+
+  @override
+  void dispose() {
+    _unreadTimer?.cancel();
+    _listScroll.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refreshUnread() async {
+    final count = await MessagesStore.unreadCount();
+    if (mounted && count != _unread) {
+      setState(() => _unread = count);
+    }
   }
 
   Future<void> _load() async {
@@ -108,6 +131,27 @@ class _LauncherScreenState extends State<LauncherScreen> {
         name: 'Settings',
         subtitle: 'Phone settings',
         onTap: () => PhoneServices.openSettings(),
+      ),
+      HomeApp(
+        icon: Icons.medication_rounded,
+        color: ContraTheme.red,
+        name: 'Pill Timer',
+        subtitle: 'Take your pills on time',
+        onTap: () => widget.onOpen(6),
+      ),
+      HomeApp(
+        icon: Icons.alarm_rounded,
+        color: ContraTheme.purple,
+        name: 'Alarm',
+        subtitle: 'Wake up on time',
+        onTap: () => widget.onOpen(7),
+      ),
+      HomeApp(
+        icon: Icons.chat_bubble_rounded,
+        color: ContraTheme.blue,
+        name: 'Messages',
+        subtitle: 'Read and send messages',
+        onTap: () => widget.onOpen(8),
       ),
     ];
   }
@@ -523,6 +567,11 @@ class _LauncherScreenState extends State<LauncherScreen> {
   }
 
   Future<void> _launchAddedApp(AddedApp app) async {
+    final overlayOk = await PhoneServices.isOverlayAllowed();
+    if (!overlayOk) {
+      _toast('First allow "Windowed apps" on the permissions screen');
+      return;
+    }
     final error = await PhoneServices.launchApp(app.package);
     if (error != null) _toast(error);
   }
@@ -569,7 +618,12 @@ class _LauncherScreenState extends State<LauncherScreen> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : LayoutBuilder(
+                : Row(
+                    children: [
+                      _ScrollRail(controller: _listScroll),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: LayoutBuilder(
                     builder: (context, constraints) {
                       final count =
                           defaults.length + _apps.length + _quick.length;
@@ -581,62 +635,110 @@ class _LauncherScreenState extends State<LauncherScreen> {
                               count;
                       final rowH = fitted.clamp(52.0, 84.0).toDouble();
                       return ListView.separated(
-                        itemExtent: rowH,
+                        controller: _listScroll,
                         itemCount: count,
                         separatorBuilder: (_, __) =>
                             const SizedBox(height: 8),
                         itemBuilder: (context, i) {
+                      final Widget child;
                       if (i < defaults.length) {
                         final app = defaults[i];
-                        return _AppRow(
+                        final row = _AppRow(
                           color: app.color,
                           leading: Icon(app.icon, size: 34, color: Colors.white),
                           name: app.name,
                           subtitle: app.subtitle,
                           onTap: app.onTap,
                         );
-                      }
-                      final addedIndex = i - defaults.length;
-                      if (addedIndex < _apps.length) {
-                        final app = _apps[addedIndex];
-                        final icon = _appIcons[app.package];
-                        return _AppRow(
-                          color: ContraTheme.blue,
-                          leading: icon != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: Image.memory(
-                                    icon,
-                                    fit: BoxFit.cover,
+                        if (app.name == 'Messages' && _unread > 0) {
+                          child = Stack(
+                            children: [
+                              row,
+                              Positioned(
+                                right: 10,
+                                top: 8,
+                                child: Container(
+                                  constraints: const BoxConstraints(minWidth: 30),
+                                  height: 30,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: ContraTheme.red,
+                                    borderRadius: BorderRadius.circular(15),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: ContraTheme.red
+                                            .withValues(alpha: 0.55),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
                                   ),
-                                )
-                              : _LetterTile(name: app.name, color: Colors.white),
-                          name: app.name,
-                          subtitle: 'App installed on your phone',
-                          onTap: () => _launchAddedApp(app),
-                        );
-                      }
-                      final quickIndex = addedIndex - _apps.length;
-                      final quick = _quick[quickIndex];
-                      return _AppRow(
-                        color: ContraTheme.teal,
-                        leading: quick.photoPath != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
-                                child: Image.file(
-                                  File(quick.photoPath!),
-                                  fit: BoxFit.cover,
+                                  child: Center(
+                                    child: Text(
+                                      _unread > 99 ? '99+' : '$_unread',
+                                      style: const TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              )
-                            : _LetterTile(name: quick.name, color: Colors.white),
-                        name: quick.name,
-                        subtitle: 'Call ${quick.name} with one tap',
-                        onTap: () => _callQuick(quick),
-                      );
-                    },
-                  );
-                    },
-                  ),
+                              ),
+                            ],
+                          );
+                        } else {
+                          child = row;
+                        }
+                      } else {
+                        final addedIndex = i - defaults.length;
+                        if (addedIndex < _apps.length) {
+                          final app = _apps[addedIndex];
+                          final icon = _appIcons[app.package];
+                          child = _AppRow(
+                            color: ContraTheme.blue,
+                            leading: icon != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Image.memory(
+                                      icon,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : _LetterTile(name: app.name, color: Colors.white),
+                            name: app.name,
+                            subtitle: 'App installed on your phone',
+                            onTap: () => _launchAddedApp(app),
+                          );
+                        } else {
+                          final quickIndex = addedIndex - _apps.length;
+                          final quick = _quick[quickIndex];
+                          child = _AppRow(
+                            color: ContraTheme.teal,
+                            leading: quick.photoPath != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Image.file(
+                                      File(quick.photoPath!),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : _LetterTile(name: quick.name, color: Colors.white),
+                            name: quick.name,
+                            subtitle: 'Call ${quick.name} with one tap',
+                            onTap: () => _callQuick(quick),
+                          );
+                        }
+                      }
+                      return SizedBox(height: rowH, child: child);
+                      },
+                    );
+                  },
+                ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -824,6 +926,111 @@ class _AppRow extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+class _ScrollRail extends StatelessWidget {
+  final ScrollController controller;
+  const _ScrollRail({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          child: _ScrollBar(
+            controller: controller,
+            dir: -1,
+            icon: Icons.keyboard_arrow_up_rounded,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Expanded(
+          child: _ScrollBar(
+            controller: controller,
+            dir: 1,
+            icon: Icons.keyboard_arrow_down_rounded,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ScrollBar extends StatefulWidget {
+  final ScrollController controller;
+  final double dir;
+  final IconData icon;
+  const _ScrollBar({
+    required this.controller,
+    required this.dir,
+    required this.icon,
+  });
+
+  @override
+  State<_ScrollBar> createState() => _ScrollBarState();
+}
+
+class _ScrollBarState extends State<_ScrollBar> {
+  static const _step = 12.0;
+  Timer? _timer;
+
+  void _start() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(milliseconds: 80), (_) {
+      if (!widget.controller.hasClients) return;
+      final target = (widget.controller.offset + widget.dir * _step)
+          .clamp(0.0, widget.controller.position.maxScrollExtent);
+      widget.controller.animateTo(
+        target,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.linear,
+      );
+    });
+  }
+
+  void _stop() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  @override
+  void dispose() {
+    _stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(
+            content: Text('Press longer',
+                style: TextStyle(fontFamily: 'Poppins', fontSize: 16)),
+            duration: Duration(milliseconds: 900),
+          ));
+      },
+      onLongPressStart: (_) => _start(),
+      onLongPressEnd: (_) => _stop(),
+      onLongPressCancel: _stop,
+      onLongPressUp: _stop,
+      child: Container(
+        width: 30,
+        decoration: BoxDecoration(
+          color: ContraTheme.card,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(widget.icon, color: ContraTheme.teal, size: 34),
       ),
     );
   }

@@ -19,6 +19,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  static const _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  String _monthShort(int m) => _months[m - 1];
+
   @override
   void initState() {
     super.initState();
@@ -45,7 +52,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future<void> _addEvent() async {
     final controller = TextEditingController();
     final key = CalendarEventsStore.dayKey(_selected);
-    final saved = await showModalBottomSheet<bool>(
+    final saved = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: ContraTheme.bg,
@@ -86,7 +93,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     color: ContraTheme.card,
                     borderRadius: BorderRadius.circular(18),
                     child: LongTap(
-                      onActivate: () => Navigator.of(sheetContext).pop(false),
+                      onActivate: () => Navigator.of(sheetContext).pop(),
                       child: const Padding(
                         padding: EdgeInsets.symmetric(vertical: 14),
                         child: Center(
@@ -150,7 +157,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
     );
 
-    if (saved is String && saved.trim().isNotEmpty) {
+    if (saved != null && saved.trim().isNotEmpty) {
       setState(() {
         _events.putIfAbsent(key, () => []).add(saved.trim());
       });

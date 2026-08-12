@@ -14,10 +14,12 @@ class CameraScreen extends StatefulWidget {
 
 class _CameraScreenState extends State<CameraScreen> {
   CameraController? _controller;
+  List<CameraDescription>? _cameras;
   bool _ready = false;
   bool _saving = false;
   bool _isVideo = false;
   bool _recording = false;
+  CameraLensDirection _lens = CameraLensDirection.back;
 
   @override
   void initState() {
@@ -36,20 +38,45 @@ class _CameraScreenState extends State<CameraScreen> {
       if (mounted) _toast('No camera found');
       return;
     }
-    final controller = CameraController(
-      cameras.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.back,
-        orElse: () => cameras.first,
-      ),
-      ResolutionPreset.high,
+    _cameras = cameras;
+    await _useCamera(_lens);
+  }
+
+  Future<void> _useCamera(CameraLensDirection lens) async {
+    final cameras = _cameras;
+    if (cameras == null) return;
+    final desc = cameras.firstWhere(
+      (c) => c.lensDirection == lens,
+      orElse: () => cameras.first,
     );
+    if (mounted) setState(() => _ready = false);
+    await _controller?.dispose();
+    final controller = CameraController(desc, ResolutionPreset.high);
     _controller = controller;
     try {
       await controller.initialize();
-      if (mounted) setState(() => _ready = true);
+      if (mounted) {
+        setState(() {
+          _lens = desc.lensDirection;
+          _ready = true;
+        });
+      }
     } catch (e) {
       if (mounted) _toast('Camera failed to start');
     }
+  }
+
+  Future<void> _flipCamera() async {
+    if (!_ready || _recording) return;
+    final next = _lens == CameraLensDirection.front
+        ? CameraLensDirection.back
+        : CameraLensDirection.front;
+    final hasNext = _cameras?.any((c) => c.lensDirection == next) ?? false;
+    if (!hasNext) {
+      _toast('No front camera');
+      return;
+    }
+    await _useCamera(next);
   }
 
   Future<void> _capture() async {
@@ -63,10 +90,12 @@ class _CameraScreenState extends State<CameraScreen> {
     setState(() => _saving = true);
     try {
       final shot = await _controller!.takePicture();
-      final access = await Gal.requestAccess();
-      if (!access) {
-        _toast('Gallery permission is needed to save photos');
-        return;
+      if (!await Gal.hasAccess()) {
+        final access = await Gal.requestAccess();
+        if (!access) {
+          _toast('Gallery permission is needed to save photos');
+          return;
+        }
       }
       await Gal.putImage(shot.path);
       if (mounted) _toast('Photo saved to gallery');
@@ -83,10 +112,12 @@ class _CameraScreenState extends State<CameraScreen> {
       if (_recording) {
         final rec = await _controller!.stopVideoRecording();
         setState(() => _recording = false);
-        final access = await Gal.requestAccess();
-        if (!access) {
-          _toast('Gallery permission is needed to save videos');
-          return;
+        if (!await Gal.hasAccess()) {
+          final access = await Gal.requestAccess();
+          if (!access) {
+            _toast('Gallery permission is needed to save videos');
+            return;
+          }
         }
         await Gal.putVideo(rec.path);
         if (mounted) _toast('Video saved to gallery');
@@ -128,26 +159,48 @@ class _CameraScreenState extends State<CameraScreen> {
           child: Column(
             children: [
               Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    color: Colors.black,
-                    child: _ready && _controller != null
-                        ? ClipRect(
-                            child: FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                width: _controller!.value.previewSize!.height,
-                                height: _controller!.value.previewSize!.width,
-                                child: CameraPreview(_controller!),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        color: Colors.black,
+                        child: _ready && _controller != null
+                            ? ClipRect(
+                                child: FittedBox(
+                                  fit: BoxFit.cover,
+                                  child: SizedBox(
+                                    width: _controller!.value.previewSize!.height,
+                                    height: _controller!.value.previewSize!.width,
+                                    child: CameraPreview(_controller!),
+                                  ),
+                                ),
+                              )
+                            : const Center(
+                                child: CircularProgressIndicator(
+                                    color: Colors.white),
                               ),
-                            ),
-                          )
-                        : const Center(
-                            child: CircularProgressIndicator(
-                                color: Colors.white),
+                      ),
+                    ),
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Material(
+                        color: Colors.black54,
+                        shape: const CircleBorder(),
+                        child: LongTap(
+                          onActivate: _flipCamera,
+                          child: const SizedBox(
+                            width: 52,
+                            height: 52,
+                            child: Icon(Icons.cameraswitch_rounded,
+                                color: Colors.white, size: 30),
                           ),
-                  ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),

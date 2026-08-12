@@ -19,6 +19,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
   bool _videos = false;
   bool _contacts = false;
   bool _phone = false;
+  bool _overlay = false;
+  bool _sms = false;
   bool _skipNextTime = false;
 
   @override
@@ -33,6 +35,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     final videos = await Permission.videos.isGranted;
     final contacts = await Permission.contacts.isGranted;
     final phone = await Permission.phone.isGranted;
+    final sms = await Permission.sms.isGranted;
+    final overlay = await PhoneServices.isOverlayAllowed();
     if (mounted) {
       setState(() {
         _camera = camera;
@@ -40,7 +44,21 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
         _videos = videos;
         _contacts = contacts;
         _phone = phone;
+        _sms = sms;
+        _overlay = overlay;
       });
+    }
+  }
+
+  Future<void> _askSms() => _askPermission(Permission.sms);
+
+  Future<void> _askOverlay() async {
+    await PhoneServices.requestOverlayPermission();
+    final ok = await PhoneServices.isOverlayAllowed();
+    if (!mounted) return;
+    setState(() => _overlay = ok);
+    if (!ok) {
+      _toast('Allow "Display over other apps" for this launcher');
     }
   }
 
@@ -88,6 +106,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     required String title,
     required bool granted,
     required VoidCallback onTap,
+    String? subtitle,
   }) {
     return Material(
       color: ContraTheme.card,
@@ -110,14 +129,29 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: ContraTheme.ink,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: ContraTheme.ink,
+                      ),
+                    ),
+                    if (subtitle != null)
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: ContraTheme.muted,
+                        ),
+                      ),
+                  ],
                 ),
               ),
               Icon(
@@ -201,6 +235,24 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                   onTap: _askPhone,
                 ),
                 const SizedBox(height: 8),
+                _permCard(
+                  icon: Icons.chat_bubble_rounded,
+                  color: ContraTheme.blue,
+                  title: 'Messages',
+                  subtitle: 'Send and read text messages',
+                  granted: _sms,
+                  onTap: _askSms,
+                ),
+                const SizedBox(height: 8),
+                _permCard(
+                  icon: Icons.picture_in_picture_alt_rounded,
+                  color: ContraTheme.blue,
+                  title: 'Windowed apps',
+                  subtitle: 'Keep the bars visible on other apps',
+                  granted: _overlay,
+                  onTap: _askOverlay,
+                ),
+                const SizedBox(height: 8),
                 Material(
                   color: ContraTheme.card,
                   borderRadius: BorderRadius.circular(18),
@@ -264,7 +316,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
-                    'Don't show this screen again',
+                    "Don't show this screen again",
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 16,

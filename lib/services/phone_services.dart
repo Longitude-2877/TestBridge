@@ -13,6 +13,23 @@ class InstalledAppInfo {
   InstalledAppInfo({required this.name, required this.package});
 }
 
+class SmsMessage {
+  final int id;
+  final String address;
+  final String body;
+  final int date;
+  final bool read;
+  final bool incoming;
+  SmsMessage({
+    required this.id,
+    required this.address,
+    required this.body,
+    required this.date,
+    required this.read,
+    required this.incoming,
+  });
+}
+
 class PhoneServices {
   static const _channel = MethodChannel('elders/phone');
 
@@ -90,5 +107,72 @@ class PhoneServices {
     } catch (e) {
       return 'Could not open app';
     }
+  }
+
+  static Future<bool> isOverlayAllowed() async {
+    try {
+      return await _channel.invokeMethod<bool>('isOverlayAllowed') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> requestOverlayPermission() async {
+    try {
+      await _channel.invokeMethod<void>('requestOverlayPermission');
+    } catch (_) {}
+  }
+
+  static Future<void> stopOverlay() async {
+    try {
+      await _channel.invokeMethod<void>('stopOverlay');
+    } catch (_) {}
+  }
+
+  static Future<String?> sendSms(String number, String text) async {
+    try {
+      await _channel.invokeMethod<void>(
+        'sendSms',
+        {'number': number, 'text': text},
+      );
+      return null;
+    } catch (e) {
+      return 'Could not send message';
+    }
+  }
+
+  static Future<List<SmsMessage>> getMessages() async {
+    final raw =
+        await _channel.invokeListMethod<Map<dynamic, dynamic>>('getMessages');
+    if (raw == null) return [];
+    return raw
+        .map((e) => SmsMessage(
+              id: (e['id'] as num?)?.toInt() ?? 0,
+              address: (e['address'] as String?) ?? '',
+              body: (e['body'] as String?) ?? '',
+              date: (e['date'] as num?)?.toInt() ?? 0,
+              read: (e['read'] as bool?) ?? true,
+              incoming: (e['incoming'] as bool?) ?? true,
+            ))
+        .toList();
+  }
+
+  static Future<List<int>> getUnreadIds() async {
+    final raw =
+        await _channel.invokeListMethod<dynamic>('getUnreadIds');
+    if (raw == null) return [];
+    return raw.map((e) => (e as num).toInt()).toList();
+  }
+
+  static Future<void> markRead(int id) async {
+    try {
+      await _channel.invokeMethod<void>('markRead', id);
+    } catch (_) {}
+  }
+
+  static Future<void> markUnread(int id) async {
+    try {
+      await _channel.invokeMethod<void>('markUnread', id);
+    } catch (_) {}
   }
 }

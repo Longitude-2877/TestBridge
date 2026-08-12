@@ -264,7 +264,8 @@ class _PhotoViewerState extends State<_PhotoViewer> {
       ),
     );
     if (ok == true) {
-      await PhotoManager.requestPermissionExtend();
+      final access = await PhotoManager.requestPermissionExtend();
+      if (!access.hasAccess) return;
       try {
         final failed =
             await PhotoManager.editor.deleteWithIds([widget.asset.id]);
@@ -373,7 +374,8 @@ class _VideoViewerState extends State<_VideoViewer> {
       ),
     );
     if (ok == true) {
-      await PhotoManager.requestPermissionExtend();
+      final access = await PhotoManager.requestPermissionExtend();
+      if (!access.hasAccess) return;
       try {
         final failed =
             await PhotoManager.editor.deleteWithIds([widget.asset.id]);

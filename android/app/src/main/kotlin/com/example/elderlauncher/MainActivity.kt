@@ -1,10 +1,14 @@
 package com.example.elderlauncher
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.provider.Settings
+import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsets
 import androidx.core.view.WindowInsetsControllerCompat
@@ -14,6 +18,8 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
 
+    private var volumeChannel: MethodChannel? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         hideSystemBars()
@@ -22,10 +28,59 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    // Custom volume bar: consume the hardware volume keys so the system
+    // slider never shows, and tell Flutter the new level.
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
+            keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+        ) {
+            val am = getSystemService(AUDIO_SERVICE) as AudioManager
+            val max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+            val cur = am.getStreamVolume(AudioManager.STREAM_MUSIC)
+            val next = if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+                (cur + 1).coerceAtMost(max)
+            } else {
+                (cur - 1).coerceAtLeast(0)
+            }
+            am.setStreamVolume(AudioManager.STREAM_MUSIC, next, 0)
+            try {
+                volumeChannel?.invokeMethod(
+                    "volumeChanged",
+                    if (max > 0) next.toDouble() / max else 0.0
+                )
+            } catch (_: Exception) {
+            }
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // We are the foreground app again - our own bars are on screen.
+        stopService(Intent(this, BarsOverlayService::class.java))
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
             hideSystemBars()
+        }
+    }
+
+    private fun overlayAllowed(): Boolean =
+        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M &&
+            Settings.canDrawOverlays(this)
+
+    private fun requestOverlayPermission() {
+        try {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        } catch (_: Exception) {
         }
     }
 
@@ -60,6 +115,9 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        volumeChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger, "elders/volume"
+        )
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "elders/phone")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -135,12 +193,54 @@ class MainActivity : FlutterActivity() {
                             if (launch == null) {
                                 result.error("NOT_FOUND", "App not found", null)
                             } else {
+                                if (overlayAllowed()) {
+                                    startService(
+                                        Intent(this, BarsOverlayService::class.java)
+                                    )
+                                }
                                 startActivity(launch)
                                 result.success(null)
                             }
                         } catch (e: Exception) {
                             result.error("LAUNCH_FAILED", e.message ?: "Could not open app", null)
                         }
+                    }
+                    "stopOverlay" -> {
+                        stopService(Intent(this, BarsOverlayService::class.java))
+                        result.success(null)
+                    }
+                    "isOverlayAllowed" -> result.success(overlayAllowed())
+                    "requestOverlayPermission" -> {
+                        requestOverlayPermission()
+                        result.success(null)
+                    }
+                    "sendSms" -> {
+                        val args = call.arguments as? Map<*, *>
+                        val number = args?.get("number") as? String ?: ""
+                        val text = args?.get("text") as? String ?: ""
+                        if (number.isBlank() || text.isBlank()) {
+                            result.error("BAD_ARGS", "Number and text required", null)
+                        } else {
+                            try {
+                                android.telephony.SmsManager.getDefault()
+                                    .sendTextMessage(number, null, text, null, null)
+                                result.success(null)
+                            } catch (e: Exception) {
+                                result.error("SEND_FAILED", e.message ?: "Could not send", null)
+                            }
+                        }
+                    }
+                    "getMessages" -> result.success(queryMessages())
+                    "getUnreadIds" -> result.success(queryUnreadIds())
+                    "markRead" -> {
+                        val id = (call.arguments as? Number)?.toLong() ?: -1L
+                        if (id >= 0) markMessageRead(id)
+                        result.success(null)
+                    }
+                    "markUnread" -> {
+                        val id = (call.arguments as? Number)?.toLong() ?: -1L
+                        if (id >= 0) markMessageUnread(id)
+                        result.success(null)
                     }
                     "exitLauncher" -> {
                         finishAffinity()
@@ -262,6 +362,86 @@ class MainActivity : FlutterActivity() {
             out.toByteArray()
         } catch (_: Exception) {
             null
+        }
+    }
+
+    private fun queryMessages(): List<Map<String, Any>> {
+        val list = mutableListOf<Map<String, Any>>()
+        try {
+            contentResolver.query(
+                android.provider.Telephony.Sms.CONTENT_URI,
+                arrayOf("_id", "address", "body", "date", "read", "type"),
+                null,
+                null,
+                "date DESC"
+            )?.use { c ->
+                val idI = c.getColumnIndexOrThrow("_id")
+                val addrI = c.getColumnIndexOrThrow("address")
+                val bodyI = c.getColumnIndexOrThrow("body")
+                val dateI = c.getColumnIndexOrThrow("date")
+                val readI = c.getColumnIndexOrThrow("read")
+                val typeI = c.getColumnIndexOrThrow("type")
+                while (c.moveToNext()) {
+                    list.add(
+                        mapOf(
+                            "id" to c.getLong(idI),
+                            "address" to (c.getString(addrI) ?: ""),
+                            "body" to (c.getString(bodyI) ?: ""),
+                            "date" to c.getLong(dateI),
+                            "read" to (c.getInt(readI) == 1),
+                            "incoming" to (c.getInt(typeI) == 1)
+                        )
+                    )
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return list
+    }
+
+    private fun queryUnreadIds(): List<Long> {
+        val ids = mutableListOf<Long>()
+        try {
+            contentResolver.query(
+                android.provider.Telephony.Sms.Inbox.CONTENT_URI,
+                arrayOf("_id"),
+                "read = 0",
+                null,
+                null
+            )?.use { c ->
+                val idI = c.getColumnIndexOrThrow("_id")
+                while (c.moveToNext()) {
+                    ids.add(c.getLong(idI))
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return ids
+    }
+
+    private fun markMessageRead(id: Long) {
+        try {
+            val values = android.content.ContentValues().apply { put("read", 1) }
+            contentResolver.update(
+                android.provider.Telephony.Sms.CONTENT_URI,
+                values,
+                "_id=?",
+                arrayOf(id.toString())
+            )
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun markMessageUnread(id: Long) {
+        try {
+            val values = android.content.ContentValues().apply { put("read", 0) }
+            contentResolver.update(
+                android.provider.Telephony.Sms.CONTENT_URI,
+                values,
+                "_id=?",
+                arrayOf(id.toString())
+            )
+        } catch (_: Exception) {
         }
     }
 }
