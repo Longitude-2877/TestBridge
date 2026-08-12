@@ -19,22 +19,6 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-subprojects {
-    plugins.withId("com.android.library") {
-        extensions.configure<com.android.build.api.dsl.LibraryExtension> {
-            compileSdk = 36
-        }
-    }
-}
-
-subprojects {
-    tasks.configureEach {
-        if (name.startsWith("checkReleaseAarMetadata") || name.startsWith("checkDebugAarMetadata")) {
-            enabled = false
-        }
-    }
-}
-
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
