@@ -540,7 +540,7 @@ class _LauncherScreenState extends State<LauncherScreen> {
             children: [
               const Expanded(
                 child: Text(
-                  'Apps',
+                  'Home Screen',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 28,
