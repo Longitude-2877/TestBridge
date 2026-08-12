@@ -15,23 +15,15 @@ class DialerScreen extends StatefulWidget {
 
 class _DialerScreenState extends State<DialerScreen> {
   String _number = '';
+  String? _contactName;
 
-  static const _keys = [
-    ['1', '', ''],
-    ['2', 'ABC', ''],
-    ['3', 'DEF', ''],
-    ['4', 'GHI', ''],
-    ['5', 'JKL', ''],
-    ['6', 'MNO', ''],
-    ['7', 'PQRS', ''],
-    ['8', 'TUV', ''],
-    ['9', 'WXYZ', ''],
-    ['*', '', ''],
-    ['0', '+', ''],
-    ['#', '', ''],
-  ];
+  static const _keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'];
 
-  void _addDigit(String d) => setState(() => _number += d);
+  void _addDigit(String d) =>
+      setState(() {
+        _contactName = null;
+        _number += d;
+      });
 
   void _removeDigit() =>
       setState(() => _number = _number.isEmpty ? '' : _number.substring(0, _number.length - 1));
@@ -75,7 +67,10 @@ class _DialerScreenState extends State<DialerScreen> {
       ),
     );
     if (contact != null) {
-      setState(() => _number = contact.number);
+      setState(() {
+        _contactName = contact.name;
+        _number = contact.number;
+      });
     }
   }
 
@@ -110,7 +105,9 @@ class _DialerScreenState extends State<DialerScreen> {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        _number.isEmpty ? 'Enter number' : _number,
+                        _number.isEmpty
+                            ? 'Enter number'
+                            : (_contactName ?? _number),
                         style: const TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: 34,
@@ -141,9 +138,8 @@ class _DialerScreenState extends State<DialerScreen> {
                   children: [
                     for (final k in _keys)
                       _KeyButton(
-                        main: k[0],
-                        sub: k[1],
-                        onActivate: () => _addDigit(k[0]),
+                        main: k,
+                        onActivate: () => _addDigit(k),
                       ),
                     _ActionButton(
                       icon: Icons.contacts_rounded,
@@ -173,12 +169,10 @@ class _DialerScreenState extends State<DialerScreen> {
 
 class _KeyButton extends StatelessWidget {
   final String main;
-  final String sub;
   final VoidCallback onActivate;
 
   const _KeyButton({
     required this.main,
-    required this.sub,
     required this.onActivate,
   });
 
@@ -191,28 +185,14 @@ class _KeyButton extends StatelessWidget {
       child: LongTap(
         onActivate: onActivate,
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                main,
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 26,
-                  fontWeight: FontWeight.w600,
-                  color: ContraTheme.ink,
-                ),
-              ),
-              Text(
-                sub,
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: ContraTheme.muted,
-                ),
-              ),
-            ],
+          child: Text(
+            main,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 38,
+              fontWeight: FontWeight.w700,
+              color: ContraTheme.ink,
+            ),
           ),
         ),
       ),
