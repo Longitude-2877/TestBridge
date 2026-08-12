@@ -41,17 +41,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     });
   }
 
-  void _toggleSign() {
-    setState(() {
-      if (_display == '0' || _display == 'Error') return;
-      if (_display.startsWith('-')) {
-        _display = _display.substring(1);
-      } else {
-        _display = '-$_display';
-      }
-    });
-  }
-
   void _chooseOperator(String op) {
     setState(() {
       _firstOperand = double.tryParse(_display) ?? 0;
@@ -182,11 +171,27 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                   child: Column(
                     children: [
                       Expanded(
-                        child: _KeyRow([
-                          _Key('C', color: ContraTheme.red, onTap: _clear),
-                          _Key('⌫', color: ContraTheme.muted, onTap: _backspace),
-                          _Key('±', color: ContraTheme.muted, onTap: _toggleSign),
-                        ]),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(3),
+                                child: _Key('C',
+                                    color: ContraTheme.red,
+                                    onTap: _clear),
+                              ),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(3),
+                                child: _Key('⌫',
+                                    color: ContraTheme.muted,
+                                    onTap: _backspace),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       Expanded(
                         child: _KeyRow([

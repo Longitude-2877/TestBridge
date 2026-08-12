@@ -129,13 +129,23 @@ class _CameraScreenState extends State<CameraScreen> {
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(20),
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    color: Colors.black,
                     child: _ready && _controller != null
-                        ? CameraPreview(_controller!)
+                        ? ClipRect(
+                            child: FittedBox(
+                              fit: BoxFit.cover,
+                              child: SizedBox(
+                                width: _controller!.value.previewSize!.height,
+                                height: _controller!.value.previewSize!.width,
+                                child: CameraPreview(_controller!),
+                              ),
+                            ),
+                          )
                         : const Center(
-                            child: CircularProgressIndicator(color: Colors.white),
+                            child: CircularProgressIndicator(
+                                color: Colors.white),
                           ),
                   ),
                 ),

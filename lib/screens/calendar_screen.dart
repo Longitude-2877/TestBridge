@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../services/calendar_events_store.dart';
 import '../services/festivals_data.dart';
 import '../theme/contra_theme.dart';
+import '../widgets/custom_keyboard.dart';
 import '../widgets/long_tap.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -13,8 +15,20 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focused = DateTime.now();
   DateTime _selected = DateTime.now();
+  Map<String, List<String>> _events = {};
 
   static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    final events = await CalendarEventsStore.load();
+    if (mounted) setState(() => _events = events);
+  }
 
   void _changeMonth(int delta) {
     setState(() {
@@ -28,6 +42,123 @@ class _CalendarScreenState extends State<CalendarScreen> {
     });
   }
 
+  Future<void> _addEvent() async {
+    final controller = TextEditingController();
+    final key = CalendarEventsStore.dayKey(_selected);
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: ContraTheme.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Add event on '
+              '${_selected.day} ${_monthShort(_selected.month)}',
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: ContraTheme.ink,
+              ),
+            ),
+            const SizedBox(height: 12),
+            CustomTextField(
+              controller: controller,
+              hint: 'Event name (eg. Doctor visit)',
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Material(
+                    color: ContraTheme.card,
+                    borderRadius: BorderRadius.circular(18),
+                    child: LongTap(
+                      onActivate: () => Navigator.of(sheetContext).pop(false),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        child: Center(
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: ContraTheme.ink,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Material(
+                    color: ContraTheme.teal,
+                    borderRadius: BorderRadius.circular(18),
+                    child: LongTap(
+                      onActivate: () {
+                        final name = controller.text.trim();
+                        if (name.isEmpty) {
+                          ScaffoldMessenger.of(context)
+                            ..hideCurrentSnackBar()
+                            ..showSnackBar(const SnackBar(
+                              content:
+                                  Text('Type an event name first',
+                                      style: TextStyle(
+                                          fontFamily: 'Poppins')),
+                              duration: Duration(seconds: 2),
+                            ));
+                          return;
+                        }
+                        Navigator.of(sheetContext).pop(name);
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        child: Center(
+                          child: Text(
+                            'Save',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (saved is String && saved.trim().isNotEmpty) {
+      setState(() {
+        _events.putIfAbsent(key, () => []).add(saved.trim());
+      });
+      await CalendarEventsStore.save(_events);
+    }
+    controller.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
@@ -39,7 +170,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         now.year == _focused.year && now.month == _focused.month;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
       child: Column(
         children: [
           Row(
@@ -49,14 +180,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 onTap: () => _changeMonth(-1),
               ),
               Expanded(
-                child: Text(
-                  '${_focused.year} · ${_monthName(_focused.month)}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: ContraTheme.ink,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${_focused.year} · ${_monthName(_focused.month)}',
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: ContraTheme.ink,
+                    ),
                   ),
                 ),
               ),
@@ -66,7 +199,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Row(
             children: [
               for (final d in _weekdays)
@@ -76,7 +209,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: ContraTheme.muted,
                     ),
@@ -89,8 +222,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
             flex: 3,
             child: GridView.count(
               crossAxisCount: 7,
-              mainAxisSpacing: 4,
-              crossAxisSpacing: 4,
+              mainAxisSpacing: 3,
+              crossAxisSpacing: 3,
               children: [
                 for (var i = 0; i < leadingBlanks; i++) const SizedBox(),
                 for (var day = 1; day <= daysInMonth; day++)
@@ -101,17 +234,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         _selected.month == _focused.month &&
                         _selected.day == day,
                     hasEvents: FestivalsData.forDay(
-                      DateTime(_focused.year, _focused.month, day),
-                    ).isNotEmpty,
+                              DateTime(_focused.year, _focused.month, day),
+                            ).isNotEmpty ||
+                        _events[
+                                CalendarEventsStore.dayKey(DateTime(
+                                    _focused.year, _focused.month, day))] !=
+                            null,
                     onTap: () => _selectDay(day),
                   ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Expanded(
             flex: 2,
-            child: _EventsPanel(selected: _selected),
+            child: _EventsPanel(
+              selected: _selected,
+              events: _events[CalendarEventsStore.dayKey(_selected)] ?? const [],
+              onAdd: _addEvent,
+            ),
           ),
         ],
       ),
@@ -129,17 +270,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
 class _EventsPanel extends StatelessWidget {
   final DateTime selected;
-  const _EventsPanel({required this.selected});
+  final List<String> events;
+  final VoidCallback onAdd;
+  const _EventsPanel({
+    required this.selected,
+    required this.events,
+    required this.onAdd,
+  });
 
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    final events = FestivalsData.forDay(selected);
+    final festivals = FestivalsData.forDay(selected);
     final upcoming = FestivalsData.upcoming(today, limit: 8);
+    final hasContent = festivals.isNotEmpty || events.isNotEmpty;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       decoration: BoxDecoration(
         color: ContraTheme.card,
         borderRadius: BorderRadius.circular(18),
@@ -154,38 +302,86 @@ class _EventsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            events.isNotEmpty
-                ? '${selected.day} ${_monthShort(selected.month)}'
-                : 'Upcoming events',
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: ContraTheme.ink,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  hasContent
+                      ? '${selected.day} ${_monthShort(selected.month)}'
+                      : 'Upcoming events',
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: ContraTheme.ink,
+                  ),
+                ),
+              ),
+              Material(
+                color: ContraTheme.teal,
+                shape: const CircleBorder(),
+                elevation: 1,
+                child: LongTap(
+                  onActivate: onAdd,
+                  child: const SizedBox(
+                    width: 34,
+                    height: 34,
+                    child: Icon(Icons.add_rounded,
+                        color: Colors.white, size: 22),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
           Expanded(
-            child: events.isNotEmpty
+            child: hasContent
                 ? ListView.separated(
-                    itemCount: events.length,
+                    itemCount: festivals.length + events.length,
                     separatorBuilder: (_, __) =>
                         Divider(height: 1, color: ContraTheme.bg),
                     itemBuilder: (context, i) {
-                      final f = events[i];
+                      if (i < events.length) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.event_rounded,
+                                  color: ContraTheme.teal, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  events[i],
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: ContraTheme.ink,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      final f = festivals[i - events.length];
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Row(
                           children: [
-                            Text(f.emoji, style: const TextStyle(fontSize: 22)),
+                            Text(f.emoji,
+                                style: const TextStyle(fontSize: 20)),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 f.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontFamily: 'Poppins',
-                                  fontSize: 16,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                   color: ContraTheme.ink,
                                 ),
@@ -202,7 +398,7 @@ class _EventsPanel extends StatelessWidget {
                           'Nothing special on this day',
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w500,
                             color: ContraTheme.muted,
                           ),
@@ -219,14 +415,16 @@ class _EventsPanel extends StatelessWidget {
                             child: Row(
                               children: [
                                 Text(f.emoji,
-                                    style: const TextStyle(fontSize: 20)),
+                                    style: const TextStyle(fontSize: 18)),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     f.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontFamily: 'Poppins',
-                                      fontSize: 15,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: ContraTheme.ink,
                                     ),
@@ -236,7 +434,7 @@ class _EventsPanel extends StatelessWidget {
                                   '${date.day} ${_monthShort(date.month)}',
                                   style: const TextStyle(
                                     fontFamily: 'Poppins',
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                     color: ContraTheme.muted,
                                   ),
@@ -280,7 +478,7 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final numberStyle = TextStyle(
       fontFamily: 'Poppins',
-      fontSize: 15,
+      fontSize: 14,
       fontWeight: FontWeight.w600,
       color: isSelected ? Colors.white : ContraTheme.ink,
     );
@@ -305,7 +503,10 @@ class _DayCell extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('$day', style: numberStyle),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('$day', style: numberStyle),
+              ),
               const SizedBox(height: 2),
               if (hasEvents)
                 Row(
@@ -345,9 +546,9 @@ class _NavIconButton extends StatelessWidget {
       child: LongTap(
         onActivate: onTap,
         child: SizedBox(
-          width: 42,
-          height: 42,
-          child: Icon(icon, color: ContraTheme.ink, size: 26),
+          width: 38,
+          height: 38,
+          child: Icon(icon, color: ContraTheme.ink, size: 24),
         ),
       ),
     );
