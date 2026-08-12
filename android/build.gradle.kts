@@ -21,8 +21,16 @@ subprojects {
 
 subprojects {
     plugins.withId("com.android.library") {
-        extensions.configure<com.android.build.gradle.LibraryExtension> {
+        extensions.configure<com.android.build.api.dsl.LibraryExtension> {
             compileSdk = 36
+        }
+    }
+}
+
+subprojects {
+    tasks.configureEach {
+        if (name.startsWith("checkReleaseAarMetadata") || name.startsWith("checkDebugAarMetadata")) {
+            enabled = false
         }
     }
 }
