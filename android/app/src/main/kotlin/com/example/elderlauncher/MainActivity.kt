@@ -33,7 +33,7 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, "elders/volume")
     }
 
-    private val windowManager by lazy { getSystemService(Context.WINDOW_SERVICE) as WindowManager }
+    private val wm by lazy { getSystemService(Context.WINDOW_SERVICE) as WindowManager }
     private var overlayTop: View? = null
     private var overlayBottom: View? = null
 
@@ -157,7 +157,7 @@ class MainActivity : FlutterActivity() {
                     PixelFormat.TRANSLUCENT
                 )
                 topParams.gravity = Gravity.TOP
-                windowManager.addView(top, topParams)
+                wm.addView(top, topParams)
                 overlayTop = top
 
                 val bottom = TextView(this).apply {
@@ -175,12 +175,12 @@ class MainActivity : FlutterActivity() {
                     PixelFormat.TRANSLUCENT
                 )
                 bottomParams.gravity = Gravity.BOTTOM
-                windowManager.addView(bottom, bottomParams)
+                wm.addView(bottom, bottomParams)
                 overlayBottom = bottom
             } else {
-                overlayTop?.let { windowManager.removeView(it) }
+                overlayTop?.let { wm.removeView(it) }
                 overlayTop = null
-                overlayBottom?.let { windowManager.removeView(it) }
+                overlayBottom?.let { wm.removeView(it) }
                 overlayBottom = null
             }
         } catch (_: Exception) {
