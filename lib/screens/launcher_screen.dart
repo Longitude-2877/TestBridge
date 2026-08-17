@@ -148,8 +148,8 @@ class _LauncherScreenState extends State<LauncherScreen> {
         icon: Icons.settings_rounded,
         color: ContraTheme.ink,
         name: 'Settings',
-        subtitle: 'Phone settings',
-        onTap: () => PhoneServices.openSettings(),
+        subtitle: 'App & phone settings',
+        onTap: () => widget.onOpen(9),
       ),
     ];
   }
@@ -618,6 +618,24 @@ class _LauncherScreenState extends State<LauncherScreen> {
                         ),
                       ),
                     ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: ContraTheme.yellow,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        '6',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Material(
                       color: ContraTheme.yellow,
                       shape: const CircleBorder(),

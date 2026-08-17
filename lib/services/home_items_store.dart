@@ -168,6 +168,7 @@ class HomeItemsStore {
   static const _messagesKey = 'home_messages';
   static const _eventsKey = 'home_events';
   static const _skipPermKey = 'skip_permissions';
+  static const _activationKey = 'activation_mode';
 
   static Future<bool> skipPermissions() async {
     final prefs = await SharedPreferences.getInstance();
@@ -177,6 +178,17 @@ class HomeItemsStore {
   static Future<void> setSkipPermissions(bool v) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_skipPermKey, v);
+  }
+
+  // Activation gesture: 'tap' | 'double' | 'long'.
+  static Future<String> activationMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_activationKey) ?? 'long';
+  }
+
+  static Future<void> setActivationMode(String mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_activationKey, mode);
   }
 
   static Future<List<AddedApp>> loadApps() async {

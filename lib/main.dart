@@ -13,12 +13,14 @@ import 'screens/permissions_screen.dart';
 import 'screens/pill_timer_screen.dart';
 import 'screens/alarm_screen.dart';
 import 'screens/messages_screen.dart';
+import 'screens/settings_screen.dart';
 import 'screens/lock_screen.dart';
 import 'services/phone_services.dart';
 import 'services/home_items_store.dart';
 import 'theme/contra_theme.dart';
 import 'widgets/permanent_overlay.dart';
 import 'widgets/volume_overlay.dart';
+import 'widgets/long_press.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,6 +71,9 @@ class _LauncherRootState extends State<LauncherRoot> with WidgetsBindingObserver
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    ActivationMode.load().then((_) {
+      if (mounted) setState(() {});
+    });
     _checkSkip();
     _immersiveTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       _enforceImmersiveMode();
@@ -174,7 +179,8 @@ class _LauncherRootState extends State<LauncherRoot> with WidgetsBindingObserver
                             5 => const GalleryScreen(),
                             6 => const PillTimerScreen(),
                             7 => const AlarmScreen(),
-                            _ => const MessagesScreen(),
+                            8 => const MessagesScreen(),
+                            _ => const SettingsScreen(),
                           },
                   ),
                   SystemBottomBar(
