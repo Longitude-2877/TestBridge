@@ -235,14 +235,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+}
 
-  static String _monthShort(int m) {
-    const names = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return names[m - 1];
-  }
+String _monthShort(int m) {
+  const names = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  return names[m - 1];
 }
 
 class _EventsPanel extends StatelessWidget {
@@ -286,7 +286,7 @@ class _EventsPanel extends StatelessWidget {
               Expanded(
                 child: Text(
                   events.isNotEmpty || userEvents.isNotEmpty
-                      ? '${selected.day} ${CalendarScreen._monthShort(selected.month)}'
+                      ? '${selected.day} ${_monthShort(selected.month)}'
                       : 'Upcoming events',
                   style: TextStyle(
                     fontFamily: 'Poppins',
@@ -411,7 +411,7 @@ class _EventsPanel extends StatelessWidget {
                                       ),
                                     ),
                                     Text(
-                                      '${date.day} ${CalendarScreen._monthShort(date.month)}',
+                                      '${date.day} ${_monthShort(date.month)}',
                                       style: const TextStyle(
                                         fontFamily: 'Poppins',
                                         fontSize: 14,
